@@ -21,7 +21,7 @@ public class RevenueService : IRevenueService
         if (dto.ClientId == 0 || dto.ClientId == null)
             throw new BadHttpRequestException("Client ID is required.");
         
-        var clientExists = await _context.Clients.AnyAsync(c => c.Id == dto.ClientId);
+        var clientExists = await _context.Clients.AnyAsync(c => c.Id == dto.ClientId && !c.IsDeleted);
         if (!clientExists)
             throw new NotFoundException("Client not found.");
         

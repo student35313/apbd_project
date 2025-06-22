@@ -17,6 +17,10 @@ public class ClientService : IClientService
 
     public async Task AddIndividualClientAsync(AddIndividualClientDto dto)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
         var exists = await _context.Clients
             .OfType<IndividualClient>()
             .AnyAsync(c => c.Pesel == dto.Pesel);
@@ -45,10 +49,21 @@ public class ClientService : IClientService
 
         _context.Clients.Add(client);
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task AddCompanyClientAsync(AddCompanyClientDto dto)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
         var exists = await _context.Clients
             .OfType<CompanyClient>()
             .AnyAsync(c => c.KrsNumber == dto.KrsNumber);
@@ -75,6 +90,13 @@ public class ClientService : IClientService
 
         _context.Clients.Add(client);
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     
@@ -96,12 +118,7 @@ public class ClientService : IClientService
             _context.Products.RemoveRange(client.Products);
             
             _context.Contracts.RemoveRange(client.Contracts);
-
-            client.FirstName = "REMOVED";
-            client.LastName = "REMOVED";
-            client.Address = "REMOVED";
-            client.Email = "REMOVED";
-            client.PhoneNumber = "REMOVED";
+            
             client.IsDeleted = true;
 
             await _context.SaveChangesAsync();

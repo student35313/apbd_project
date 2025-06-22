@@ -16,10 +16,4 @@ public class IndividualClient : Client
     
     public IndividualClient() { }
     
-    
-    public void SoftDelete()
-    {
-        MarkAsDeleted();
-        FirstName = LastName = Address = Email = PhoneNumber = string.Empty;
-    }
 }
