@@ -1,12 +1,11 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Project.Data;
 using Project.Middlewares;
-using Project.Models;
+
 using Project.Services;
 using Scalar.AspNetCore;
 
@@ -18,6 +17,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>();
+builder.Services.AddScoped<IRevenueService, RevenueService>();
 builder.Services.AddDbContext<DatabaseContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -45,15 +46,12 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
-// Middlewary
-// https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-9.0
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseAuthentication();

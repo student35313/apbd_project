@@ -71,8 +71,7 @@ public class AuthService : IAuthService
 
             var accessToken = CreateAccessToken(user);
             var refreshToken = CreateRefreshToken();
-
-            // Вот тут проверка — если токен уже есть, мы его обновляем:
+            
             var existingToken = await _context.RefreshTokens.FindAsync(user.Id);
             if (existingToken != null)
             {

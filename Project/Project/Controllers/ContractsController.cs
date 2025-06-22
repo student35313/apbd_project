@@ -47,14 +47,18 @@ public async Task<IActionResult> CreateContract([FromBody] CreateContractDto dto
         }
     }
 
-    [HttpPatch("sign")]
+    [HttpPost("payment")]
     [Authorize(Roles = "Admin,User")]
-    public async Task<IActionResult> SignContract([FromBody] SignContractDto dto)
+    public async Task<IActionResult> AddPayment([FromBody] AddPaymentDto dto)
     {
         try
         {
-            await _contractService.SignContractAsync(dto);
-            return Ok("Contract signed successfully.");
+            var remaining = await _contractService.AddPaymentAsync(dto);
+
+            if (remaining == 0)
+                return Ok("Contract fully paid and signed.");
+            else
+                return Ok("Payment accepted. Remaining amount: " + remaining + " PLN.");
         }
         catch (NotFoundException ex)
         {
@@ -64,10 +68,38 @@ public async Task<IActionResult> CreateContract([FromBody] CreateContractDto dto
         {
             return Conflict(ex.Message);
         }
+        catch (BadHttpRequestException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Internal server error" });
         }
     }
+
+    [HttpDelete("{contractId}")]
+    [Authorize(Roles = "Admin,User")]
+    public async Task<IActionResult> DeleteContract(int contractId)
+    {
+        try
+        {
+            await _contractService.DeleteContractAsync(contractId);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Internal server error" });
+        }
+    }
+
+    
 }

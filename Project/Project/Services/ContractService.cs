@@ -88,13 +88,28 @@ public class ContractService : IContractService
     }
 }
     
-    public async Task SignContractAsync(SignContractDto dto)
+    
+    public async Task DeleteContractAsync(int contractId)
     {
+        var contract = await _context.Contracts.FirstOrDefaultAsync(c => c.Id == contractId);
+
+        if (contract == null)
+            throw new NotFoundException("Contract not found.");
+        
+
+        _context.Contracts.Remove(contract);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<decimal> AddPaymentAsync(AddPaymentDto dto)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
         var contract = await _context.Contracts
-            .FirstOrDefaultAsync(c =>
-                c.ClientId == dto.ClientId &&
-                c.SoftwareProductId == dto.SoftwareProductId &&
-                c.EndDate >= DateTime.Now);
+            .Include(c => c.Payments)
+            .FirstOrDefaultAsync(c => c.Id == dto.ContractId);
 
         if (contract == null)
             throw new NotFoundException("Valid contract not found.");
@@ -109,21 +124,33 @@ public class ContractService : IContractService
             throw new ConflictException("Contract has expired.");
         }
 
-        contract.IsSigned = true;
+        var totalPaid = contract.Payments.Sum(p => p.Amount);
+        var newTotal = totalPaid + dto.Amount;
+
+        if (newTotal > contract.FinalPrice)
+            throw new ConflictException("Payment exceeds contract price.");
+
+        var payment = new Payment
+        {
+            Amount = dto.Amount,
+            ContractId = contract.Id,
+            Date = DateTime.Now
+        };
+
+        _context.Payments.Add(payment);
+
+        if (newTotal == contract.FinalPrice)
+            contract.IsSigned = true;
 
         await _context.SaveChangesAsync();
-    }
-    
-    public async Task DeleteContractAsync(int contractId)
-    {
-        var contract = await _context.Contracts.FirstOrDefaultAsync(c => c.Id == contractId);
-
-        if (contract == null)
-            throw new NotFoundException("Contract not found.");
-        
-
-        _context.Contracts.Remove(contract);
-        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return contract.FinalPrice - newTotal;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     
