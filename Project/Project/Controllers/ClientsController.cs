@@ -21,7 +21,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPost("individual")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddIndividualClient([FromBody] AddIndividualClientDto dto)
     {
         try
@@ -42,7 +42,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPost("company")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddCompanyClient([FromBody] AddCompanyClientDto dto)
     {
         try
@@ -62,8 +62,8 @@ public class ClientsController : ControllerBase
         }
     }
     
-    [HttpDelete("individual/{pesel}")]
-    //[Authorize(Roles = "Admin")]
+    [HttpDelete("individual/{pesel}")] 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteClient(string pesel)
     {
         try
@@ -84,7 +84,7 @@ public class ClientsController : ControllerBase
     }
     
     [HttpPatch("individual")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateIndividualClient([FromBody] UpdateIndividualClientDto dto)
     {
         try
@@ -105,7 +105,7 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPatch("company")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateCompanyClient([FromBody] UpdateCompanyClientDto dto)
     {
         try

@@ -1,10 +1,12 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Project.Data;
 using Project.Middlewares;
+using Project.Models;
 using Project.Services;
 using Scalar.AspNetCore;
 
@@ -15,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IClientService, ClientService>();
+builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddDbContext<DatabaseContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -59,3 +62,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

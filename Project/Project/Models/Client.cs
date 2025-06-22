@@ -24,4 +24,10 @@ public abstract class Client
     public bool IsDeleted { get; set; }
     
     public void MarkAsDeleted() => IsDeleted = true;
+    
+    public virtual ICollection<Product> Products { get; set; }
+    
+    public virtual ICollection<Contract> Contracts { get; set; }
+
+
 }

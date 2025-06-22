@@ -24,6 +24,14 @@ public class ClientService : IClientService
         if (exists)
             throw new ConflictException("Client with this PESEL already exists.");
 
+        var emailExists = await _context.Clients.AnyAsync(c => c.Email == dto.Email);
+        if (emailExists)
+            throw new ConflictException("Client with this email already exists.");
+
+        var phoneExists = await _context.Clients.AnyAsync(c => c.PhoneNumber == dto.PhoneNumber);
+        if (phoneExists)
+            throw new ConflictException("Client with this phone number already exists.");
+
         var client = new IndividualClient
         {
             FirstName = dto.FirstName,
@@ -48,6 +56,14 @@ public class ClientService : IClientService
         if (exists)
             throw new ConflictException("Company with this KRS already exists.");
 
+        var emailExists = await _context.Clients.AnyAsync(c => c.Email == dto.Email);
+        if (emailExists)
+            throw new ConflictException("Client with this email already exists.");
+
+        var phoneExists = await _context.Clients.AnyAsync(c => c.PhoneNumber == dto.PhoneNumber);
+        if (phoneExists)
+            throw new ConflictException("Client with this phone number already exists.");
+
         var client = new CompanyClient
         {
             CompanyName = dto.CompanyName,
@@ -60,27 +76,44 @@ public class ClientService : IClientService
         _context.Clients.Add(client);
         await _context.SaveChangesAsync();
     }
+
     
     public async Task RemoveClientByPeselAsync(string pesel)
     {
-        var client = await _context.Clients
-            .OfType<IndividualClient>()
-            .FirstOrDefaultAsync(c => c.Pesel == pesel);
+        await using var transaction = await _context.Database.BeginTransactionAsync();
 
-        if (client == null)
-            throw new NotFoundException("Client with given PESEL not found.");
+        try
+        {
+            var client = await _context.Clients
+                .OfType<IndividualClient>()
+                .Include(c => c.Products)
+                .Include(c => c.Contracts)
+                .FirstOrDefaultAsync(c => c.Pesel == pesel);
 
-        
-        //Soft delete
-        client.FirstName = "REMOVED";
-        client.LastName = "REMOVED";
-        client.Address = "REMOVED";
-        client.Email = "REMOVED";
-        client.PhoneNumber = "REMOVED";
-        client.IsDeleted = true;
+            if (client == null)
+                throw new NotFoundException("Client with given PESEL not found.");
+            
+            _context.Products.RemoveRange(client.Products);
+            
+            _context.Contracts.RemoveRange(client.Contracts);
 
-        await _context.SaveChangesAsync();
+            client.FirstName = "REMOVED";
+            client.LastName = "REMOVED";
+            client.Address = "REMOVED";
+            client.Email = "REMOVED";
+            client.PhoneNumber = "REMOVED";
+            client.IsDeleted = true;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
+
 
     public async Task UpdateIndividualClientAsync(UpdateIndividualClientDto dto)
     {
